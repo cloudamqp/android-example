@@ -1,13 +1,40 @@
-<?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
-    >
-<TextView
-    android:id="@+id/output"
-    android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
-    android:text="@string/hello_cloudamqp"
-    />
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#ffffff"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin" >
+
+    <TableLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:stretchColumns="1" >
+
+        <EditText
+            android:id="@+id/text"
+            android:layout_width="fill_parent"
+            android:layout_height="50dp"
+            android:background="#ffffff"
+            android:hint="Enter a message" />
+
+        <Button
+            android:id="@+id/publish"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/text"
+            android:text="Publish message" />
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+        
+            android:layout_below="@+id/publish"
+            android:textColor="#000000" />
+        
+    </TableLayout>
+
 </ScrollView>

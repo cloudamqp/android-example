@@ -1,61 +1,77 @@
 package com.cloudamqp.androidexample;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
-import com.rabbitmq.client.*;
+
+import com.cloudamqp.R;
+import com.cloudamqp.androidexample.MyService.LocalBinder;
+
 
 import android.app.Activity;
-import android.os.Bundle;
 
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Message;
 import android.util.Log;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+
 
 public class ActivityHome extends Activity {
-	private Connection connection;
 
+	MyService mService;
+	boolean mBound = false;
+	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		Thread thread = new Thread(new Runnable() {
+		setContentView(R.layout.activity_main);
+		
+		Button button = (Button) findViewById(R.id.publish);
+		button.setOnClickListener(new OnClickListener() {
 			@Override
-			public void run() {
-				String uri = "CLOUDAMQP_URL";
-				try {
-					// Open a connection
-					ConnectionFactory factory = new ConnectionFactory();
-					factory.setUri(uri);
-					connection = factory.newConnection();
-
-					Channel channel1 = connection.createChannel();
-					Channel channel2 = connection.createChannel();
-
-					String message = "Hello CloudAMQP!";
-
-					// Declare the queue 'hello'
-					channel1.queueDeclare("hello", false, false, false, null);
-
-					QueueingConsumer consumer = new QueueingConsumer(channel2);
-					channel2.basicConsume("hello", true, consumer);
-
-					// Publish the message 'Hello CloudAMQP''
-					channel1.basicPublish("", "hello", null, message.getBytes());
-					Log.d("", " [x] Sent '" + message + "'");
-
-					while (true) {
-						QueueingConsumer.Delivery delivery = consumer
-								.nextDelivery();
-						String message1 = new String(delivery.getBody());
-						Log.d("", " [x] Received '" + message1 + "'");
-					}
-				} catch (Exception e) {
-					e.printStackTrace();
+			public void onClick(View arg0) {
+				if(mBound)
+				{
+					EditText et = (EditText) findViewById(R.id.text);
+					mService.publishMessage(et.getText().toString());
+					et.setText("");
 				}
 			}
 		});
-		thread.start();
+	}
+	
+	@Override
+	protected void onStart() {
+		super.onStart();
+		Intent intent = new Intent(this, MyService.class);
+		bindService(intent, mConnection, Context.BIND_AUTO_CREATE);		
+		
+	}
+
+	@Override
+	protected void onStop() {
+		super.onStop();
+		Log.d("","onStop");
+		// Unbind from the service
+		if (mBound) {
+			unbindService(mConnection); 
+			mBound = false;
+		}
 	}
 
 	@Override
 	protected void onResume() {
-		super.onPause();
+		super.onResume();
 	}
 
 	@Override
@@ -63,4 +79,41 @@ public class ActivityHome extends Activity {
 		super.onPause();
 	}
 
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		Log.d("","destroy");
+	}
+	/** Defines callbacks for service binding, passed to bindService() */
+	private ServiceConnection mConnection = new ServiceConnection() {
+
+		@Override
+		public void onServiceConnected(ComponentName className,
+				IBinder service) {
+			// We've bound to LocalService, cast the IBinder and get LocalService instance
+			LocalBinder binder = (LocalBinder) service;
+			mService = binder.getService();
+			mBound = true;
+
+			Handler handler = new Handler() {
+				@Override
+				public void handleMessage(Message msg) {
+					String message=msg.getData().getString("msg");
+					TextView tv = (TextView) findViewById(R.id.textView);
+					Date dNow = new Date( );
+					SimpleDateFormat ft = new SimpleDateFormat ("hh:mm:ss"); 
+					tv.append(ft.format(dNow) + ' ' + message + '\n');
+				}
+			};
+			mService.subscribe(handler);
+		}
+
+		@Override
+		public void onServiceDisconnected(ComponentName arg0) {
+			 mService = null;
+	         mBound = false;
+		}
+	};
+
 }
+
