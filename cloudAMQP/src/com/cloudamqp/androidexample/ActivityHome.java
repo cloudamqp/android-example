@@ -32,7 +32,7 @@ public class ActivityHome extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
-                setupConnectionFactory();		
+        setupConnectionFactory();		
 		publishToAMQP();
 		setupPubButton();
 		
@@ -87,7 +87,7 @@ public class ActivityHome extends Activity {
 		try {
 			factory.setAutomaticRecoveryEnabled(false);	
 			factory.setUri(uri);
-		} catch (KeyManagementException | NoSuchAlgorithmException	| URISyntaxException e1) {
+		} catch (KeyManagementException | NoSuchAlgorithmException | URISyntaxException e1) {
 			e1.printStackTrace();
 		}
 	}
@@ -112,7 +112,7 @@ public class ActivityHome extends Activity {
 							QueueingConsumer.Delivery delivery = consumer.nextDelivery();
 
 							String message = new String(delivery.getBody());
-							Log.d("","[r] "+message);
+							Log.d("","[r] " + message);
 
 							Message msg = handler.obtainMessage();
 							Bundle bundle = new Bundle();
@@ -124,10 +124,9 @@ public class ActivityHome extends Activity {
 					} catch (InterruptedException e) {
 						break;
 					} catch (Exception e1) {
-						Log.d("","Connection broken"+ e1.getClass().getName());
+						Log.d("", "Connection broken: " + e1.getClass().getName());
 						try {
-							//sleep and then try again
-							Thread.sleep(4000);
+							Thread.sleep(4000); //sleep and then try again
 						} catch (InterruptedException e) {
 							break;
 						}
@@ -164,7 +163,7 @@ public class ActivityHome extends Activity {
 					} catch (InterruptedException e) {
 						break;
 					} catch (Exception e) {
-						Log.d("","Connection broken");
+						Log.d("", "Connection broken: " + e.getClass().getName());
 						try {
 							Thread.sleep(5000); //sleep and then try again
 						} catch (InterruptedException e1) {
