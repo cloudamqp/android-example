@@ -53,6 +53,7 @@ public class ActivityHome extends Activity {
 	@Override
 	protected void onStart() {
 		super.onStart();
+		Log.d("","onstart");
 		Intent intent = new Intent(this, MyService.class);
 		bindService(intent, mConnection, Context.BIND_AUTO_CREATE);		
 		
@@ -62,6 +63,7 @@ public class ActivityHome extends Activity {
 	protected void onStop() {
 		super.onStop();
 		Log.d("","onStop");
+		mService.unsubscribe();  
 		// Unbind from the service
 		if (mBound) {
 			unbindService(mConnection); 
@@ -81,8 +83,11 @@ public class ActivityHome extends Activity {
 
 	@Override
 	protected void onDestroy() {
+		
 		super.onDestroy();
-		Log.d("","destroy");
+		Log.d("","onDestroy");
+		
+		
 	}
 	/** Defines callbacks for service binding, passed to bindService() */
 	private ServiceConnection mConnection = new ServiceConnection() {

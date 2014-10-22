@@ -30,7 +30,7 @@ public class MyService extends Service {
 			return MyService.this;
 		}
 	}
-	
+
 	ConnectionFactory factory = new ConnectionFactory();
 	private BlockingDeque<String> queue = new LinkedBlockingDeque<String>();
 
@@ -61,17 +61,14 @@ public class MyService extends Service {
 		return connection; 
 	}
 
-	
-	
-	boolean isSubscribing = false;
+
 	public void subscribe(final Handler handler)
 	{
-		if (isSubscribing) return;
-		isSubscribing = true;
-		Thread subscribeThread = new Thread(new Runnable() {
+
+		subscribeThread = new Thread(new Runnable() { 
 			@Override
 			public void run() {
-				while(true)
+				while(!Thread.currentThread().isInterrupted())
 				{
 					try{
 						Connection connection = connect();
@@ -81,7 +78,7 @@ public class MyService extends Service {
 						channel.queueBind(q.getQueue(), "amq.fanout", "chat");
 						QueueingConsumer consumer = new QueueingConsumer(channel);
 						channel.basicConsume(q.getQueue(), false, consumer);
-						
+
 						// Process deliveries
 						while (true) {
 							QueueingConsumer.Delivery delivery = consumer.nextDelivery();
@@ -98,14 +95,20 @@ public class MyService extends Service {
 
 							channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
 						}
+					}
+					catch (InterruptedException e) 
+					{
+						Thread.currentThread().interrupt();
+					}
 
-					} catch (Exception e1) {
-						Log.d("","Connection broken");
+					catch (Exception e1) {
+						Log.d("","Connection broken"+ e1.getClass().getName());
 						try {
 							//sleep and then try again
-							Thread.sleep(5000);
+							Thread.sleep(4000);
 						} catch (InterruptedException e) {
 							e.printStackTrace();
+
 						}
 					}
 				}
@@ -113,16 +116,22 @@ public class MyService extends Service {
 		});
 		subscribeThread.start();
 	}
-	boolean isPublishing = false;
+
+	Thread subscribeThread;
+	Thread publishThread;
+	public void unsubscribe()
+	{
+		publishThread.interrupt();
+		subscribeThread.interrupt();
+	}
+
 
 	public void publishToAMQP()
 	{
-		if (isPublishing) return;
-		isPublishing = true;
-		Thread publishThread = new Thread(new Runnable() {
+		publishThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
-				while(true)
+				while(!Thread.currentThread().isInterrupted())
 				{
 					try {
 						Connection connection = connect();
@@ -143,29 +152,35 @@ public class MyService extends Service {
 								throw e;
 							}
 						}
-
-					} catch (Exception e) {
-						// TODO Auto-generated catch block
-						Log.d("","Connection broken");
-						try {
-							//sleep and then try again
-							Thread.sleep(5000);
-						} catch (InterruptedException e1) {
-							e1.printStackTrace();
-						}
+					}
+					catch (InterruptedException e) 
+					{
+						Thread.currentThread().interrupt();
+					}
+					catch (Exception e) {
+					
+					Log.d("","Connection broken");
+					try {
+						//sleep and then try again
+						Thread.sleep(5000);
+					} catch (InterruptedException e1) {
+						e1.printStackTrace();
 					}
 				}
 			}
-		});
+		}
+	});
 		publishThread.start();
-	}
+}
 
-	@Override
-	public IBinder onBind(Intent intent) {
-		setupConnectionFactory();		
-		publishToAMQP();
-		return mBinder;
-	}
-	
+@Override
+public IBinder onBind(Intent intent) {
+	setupConnectionFactory();		
+	publishToAMQP();
+	return mBinder;
+}
+
+
+
 
 }
