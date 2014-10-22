@@ -7,14 +7,12 @@ import java.util.Date;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 
-
 import com.cloudamqp.R;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.AMQP.Queue.DeclareOk;
-
 
 import android.app.Activity;
 
@@ -28,9 +26,10 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
-
 public class ActivityHome extends Activity {
-
+	Thread subscribeThread;
+	Thread publishThread;
+	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -65,8 +64,6 @@ public class ActivityHome extends Activity {
 	@Override
 	protected void onStart() {
 		super.onStart();
-		Log.d("","on start");
-
 	}
 
 	@Override
@@ -89,7 +86,7 @@ public class ActivityHome extends Activity {
 	}
 
 	private void setupConnectionFactory() {
-		String uri = "CLOUDAMQP_URL";
+		String uri = "amqps://uquscgyg:Bep6Q9YNrfhbBbIjSF4_jyEQyrO8tC_A@yellow-turtle.rmq.cloudamqp.com/uquscgyg";
 		try {
 			factory.setAutomaticRecoveryEnabled(false);	
 			factory.setUri(uri);
@@ -152,8 +149,6 @@ public class ActivityHome extends Activity {
 		subscribeThread.start();
 	}
 
-	Thread subscribeThread;
-	Thread publishThread;
 	public void unsubscribe()
 	{
 		publishThread.interrupt();
@@ -178,9 +173,7 @@ public class ActivityHome extends Activity {
 								channel1.basicPublish("amq.fanout", "chat", null, message.getBytes());
 								Log.d("", "[s] " + message);
 								channel1.waitForConfirmsOrDie();
-
-							}catch (Exception e)
-							{
+							} catch (Exception e){
 								Log.d("","[f] " + message);
 								queue.putFirst(message);
 								throw e;
