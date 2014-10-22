@@ -86,7 +86,7 @@ public class ActivityHome extends Activity {
 	}
 
 	private void setupConnectionFactory() {
-		String uri = "amqps://uquscgyg:Bep6Q9YNrfhbBbIjSF4_jyEQyrO8tC_A@yellow-turtle.rmq.cloudamqp.com/uquscgyg";
+		String uri = "CLOUDAMQP_URL";
 		try {
 			factory.setAutomaticRecoveryEnabled(false);	
 			factory.setUri(uri);
