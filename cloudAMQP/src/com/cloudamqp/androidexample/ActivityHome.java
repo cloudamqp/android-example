@@ -32,7 +32,7 @@ public class ActivityHome extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
-        setupConnectionFactory();		
+        	setupConnectionFactory();		
 		publishToAMQP();
 		setupPubButton();
 		
@@ -49,7 +49,7 @@ public class ActivityHome extends Activity {
 		subscribe(incomingMessageHandler);
 	}
 
-	void SetupPubButton() {
+	void setupPubButton() {
 		Button button = (Button) findViewById(R.id.publish);
 		button.setOnClickListener(new OnClickListener() {
 			@Override
@@ -71,7 +71,7 @@ public class ActivityHome extends Activity {
 	}
 	
 	private BlockingDeque<String> queue = new LinkedBlockingDeque<String>();
-	public void publishMessage(String message) {
+	void publishMessage(String message) {
 		//Adds a message to internal blocking queue
 		try {
 			Log.d("","[q] " + message);
@@ -92,7 +92,7 @@ public class ActivityHome extends Activity {
 		}
 	}
 
-	public void subscribe(final Handler handler)
+	void subscribe(final Handler handler)
 	{
 		subscribeThread = new Thread(new Runnable() { 
 			@Override
