@@ -27,15 +27,29 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 public class ActivityHome extends Activity {
-	Thread subscribeThread;
-	Thread publishThread;
-	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		Log.d("","on create");
 		setContentView(R.layout.activity_main);
 
+                setupConnectionFactory();		
+		publishToAMQP();
+		setupPubButton();
+		
+		final Handler incomingMessageHandler = new Handler() {
+			@Override
+			public void handleMessage(Message msg) {
+				String message = msg.getData().getString("msg");
+				TextView tv = (TextView) findViewById(R.id.textView);
+				Date now = new Date();
+				SimpleDateFormat ft = new SimpleDateFormat ("hh:mm:ss");
+				tv.append(ft.format(now) + ' ' + message + '\n');
+			}
+		};
+		subscribe(incomingMessageHandler);
+	}
+
+	void SetupPubButton() {
 		Button button = (Button) findViewById(R.id.publish);
 		button.setOnClickListener(new OnClickListener() {
 			@Override
@@ -45,36 +59,18 @@ public class ActivityHome extends Activity {
 				et.setText("");
 			}
 		});
-		
-		Handler handler = new Handler() {
-			@Override
-			public void handleMessage(Message msg) {
-				String message=msg.getData().getString("msg");
-				TextView tv = (TextView) findViewById(R.id.textView);
-				Date dNow = new Date( );
-				SimpleDateFormat ft = new SimpleDateFormat ("hh:mm:ss");
-				tv.append(ft.format(dNow) + ' ' + message + '\n');
-			}
-		};
-		setupConnectionFactory();		
-		publishToAMQP();
-		subscribe(handler);
 	}
-
-	@Override
-	protected void onStart() {
-		super.onStart();
-	}
-
+	
+	Thread subscribeThread;
+	Thread publishThread;
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
-		unsubscribe();
+		publishThread.interrupt();
+		subscribeThread.interrupt();
 	}
 	
-	ConnectionFactory factory = new ConnectionFactory();
 	private BlockingDeque<String> queue = new LinkedBlockingDeque<String>();
-
 	public void publishMessage(String message) {
 		//Adds a message to internal blocking queue
 		try {
@@ -84,7 +80,8 @@ public class ActivityHome extends Activity {
 			e.printStackTrace();
 		}
 	}
-
+	
+	ConnectionFactory factory = new ConnectionFactory();
 	private void setupConnectionFactory() {
 		String uri = "CLOUDAMQP_URL";
 		try {
@@ -95,22 +92,14 @@ public class ActivityHome extends Activity {
 		}
 	}
 
-	private Connection connect() throws Exception
-	{
-		Connection connection = factory.newConnection();
-		Log.d("", "Connection established");
-		return connection; 
-	}
-
 	public void subscribe(final Handler handler)
 	{
 		subscribeThread = new Thread(new Runnable() { 
 			@Override
 			public void run() {
-				while(true)
-				{
-					try{
-						Connection connection = connect();
+				while(true) {
+					try {
+						Connection connection = factory.newConnection();
 						Channel channel = connection.createChannel();
 						channel.basicQos(1);
 						DeclareOk q = channel.queueDeclare();
@@ -140,7 +129,7 @@ public class ActivityHome extends Activity {
 							//sleep and then try again
 							Thread.sleep(4000);
 						} catch (InterruptedException e) {
-							e.printStackTrace();
+							break;
 						}
 					}
 				}
@@ -149,30 +138,23 @@ public class ActivityHome extends Activity {
 		subscribeThread.start();
 	}
 
-	public void unsubscribe()
-	{
-		publishThread.interrupt();
-		subscribeThread.interrupt();
-	}
-
 	public void publishToAMQP()
 	{
 		publishThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
-				while(true)
-				{
+				while(true) {
 					try {
-						Connection connection = connect();
-						Channel channel1 = connection.createChannel();
-						channel1.confirmSelect();
+						Connection connection = factory.newConnection();
+						Channel ch = connection.createChannel();
+						ch.confirmSelect();
 
 						while (true) {
 							String message = queue.takeFirst();
 							try{
-								channel1.basicPublish("amq.fanout", "chat", null, message.getBytes());
+								ch.basicPublish("amq.fanout", "chat", null, message.getBytes());
 								Log.d("", "[s] " + message);
-								channel1.waitForConfirmsOrDie();
+								ch.waitForConfirmsOrDie();
 							} catch (Exception e){
 								Log.d("","[f] " + message);
 								queue.putFirst(message);
@@ -184,10 +166,9 @@ public class ActivityHome extends Activity {
 					} catch (Exception e) {
 						Log.d("","Connection broken");
 						try {
-							//sleep and then try again
-							Thread.sleep(5000);
+							Thread.sleep(5000); //sleep and then try again
 						} catch (InterruptedException e1) {
-							e1.printStackTrace();
+							break;
 						}
 					}
 				}
