@@ -6,7 +6,6 @@
     <uses-sdk
         android:minSdkVersion="9"
         android:targetSdkVersion="21" />
-
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
@@ -21,7 +20,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>   
-        <service android:enabled="true" android:name="com.cloudamqp.androidexample.MyService" />
     </application>
 	<uses-permission android:name="android.permission.INTERNET"></uses-permission>
 </manifest>
